@@ -1,4 +1,4 @@
-import requests
+import requests, json
 
 class VendApi:
     """
@@ -94,7 +94,30 @@ class VendApi:
         return self.__getRequest__(self.__domain + self.__ENDPOINTS['outlets'])
 
     def getProducts(self, endpointVersion='2.0'):
-        return self.__getRequest__(self.__domain + self.__ENDPOINTS['products'] + endpointVersion + '?deleted=false')
+
+        if endpointVersion == '2.0':
+            return self.__getRequest__(self.__domain + self.__ENDPOINTS['products'+ endpointVersion]  + '?deleted=false')
+
+        params = {
+            "deleted" : False,
+            "page_size" : 200
+        }
+
+        return self.__getRequestv09__(self.__domain + self.__ENDPOINTS['products'+ endpointVersion], params=params)
+
+    def updateProductInventory(self, id, inventory):
+        url = self.__domain + self.__ENDPOINTS['products0.9']
+
+        payload = {
+            "id" : id,
+            "inventory" : inventory
+        }
+
+        print(payload)
+
+        response = requests.post(url, data=json.dumps(payload), headers=self.__headers)
+
+        return response
         #return self.__getSearch__(self.__domain + self.__ENDPOINTS['search'], type='products')
     def __getSearch__(self, url, type='', deleted='false', offset='', pageSize='10000', status=''):
         """
@@ -184,6 +207,31 @@ class VendApi:
             Returns this store's domain prefix.
         """
         return self.__prefix
+
+    def __getRequestv09__(self, url, data='products', params=None):
+        response = requests.request("GET", url, headers = self.__headers, params=params)
+
+        if response.status_code != 200:
+            return None
+
+        tempJson = response.json()
+
+        pagination = tempJson['pagination']
+
+        currPage = pagination['page']
+        pages = pagination['pages']
+
+        tempData = []
+
+        while currPage <= pages:
+            tempData.extend(tempJson[data])
+
+            params['page'] = currPage + 1
+            currPage = currPage + 1
+
+            tempJson = requests.request("GET", url, headers = self.__headers, params=params).json()
+
+        return tempData
 
     def __getRequest__(self, url, params=None):
         """
