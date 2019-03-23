@@ -58,9 +58,9 @@ def startProcess(bulkDelGui):
             gui.setReadyState()
             return
 
-        prodstofix = getCsvProdsToFix()
+        prodsIdtofix = getCsvProdsToFix()
 
-        if len(prodstofix) == 0:
+        if len(prodsIdtofix) == 0:
             gui.setStatus("Please make sure CSV has an 'id' column.")
             gui.setReadyState()
             return
@@ -68,8 +68,14 @@ def startProcess(bulkDelGui):
         fullProdList = api.getProducts(endpointVersion='0.9')\
 
         prodIdtoProdObj = getProdIdtoObj(fullProdList)
-        prodIdtoInventory = getProdIdToInventory(fullProdList)
+        prodIdtoInventory = getProdIdToInventory(prodsIdtofix, prodIdtoProdObj)
 
+
+        #Zero out inventory
+        zeroOutInventory(prodIdtoInventory, api)
+        #Proccess Stock stockorders
+
+        #Cleanup with original inventory <=0
 
 
     except Exception as e:
@@ -80,12 +86,28 @@ def startProcess(bulkDelGui):
         else:
             gui.showError(title="Crashed!", message=f"Something went terribly wrong.\nCould not notify dev.\n{traceback.format_exc()}")
 
-def getProdIdToInventory(fullProdList):
+def zeroOutInventory(idToInv, api):
+
+    for id in idToInv:
+        outletInventories = idToInv[id]
+        minOutletsPayload = []
+        for outletInv in outletInventories:
+            minOutletsPayload.append(
+                {
+                    "outlet_id" : outletInv['outlet_id'],
+                    "count" : 0
+                }
+            )
+
+        response = api.updateProductInventory(id, minOutletsPayload)
+        print(response.json())
+
+def getProdIdToInventory(ids, idToObj):
 
     prodidtoinventory = {}
 
-    for p in fullProdList:
-        prodidtoinventory[p['id']] = p['inventory']
+    for id in ids:
+        prodidtoinventory[id] = idToObj[id]['inventory']
 
     return prodidtoinventory
 
