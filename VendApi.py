@@ -20,7 +20,6 @@ class VendApi:
         "delProd" : "api/products",
         "registers" : "api/2.0/registers",
         "stockorders" : "api/consignment",
-        "consignmentProduct" : "api/consignment_product",
         "channels" : "api/2.0/channels"
     }
 
@@ -50,36 +49,6 @@ class VendApi:
             404: No such customer exists to delete.
         """
         return requests.request("DELETE", '{0}{1}/{2}'.format(self.__domain, self.__ENDPOINTS['cust'], id), headers=self.__headers).status_code
-
-    def addConsignmentProductReceived(self, consignmentId, productId, count, cost):
-        url = f"{self.__domain}{self.__ENDPOINTS['consignmentProduct']}"
-        payload = {
-            "consignment_id" : consignmentId,
-            "product_id" : productId,
-            "count" : count,
-            "received" : count,
-            "cost" : cost
-        }
-
-        return requests.post(url, data=json.dumps(payload), headers=self.__headers)
-
-    def createStockOrder(self, outletid, name):
-        url = f"{self.__domain}{self.__ENDPOINTS['stockorders']}"
-        payload = {
-            "name" : name,
-            "outlet_id" : outletid,
-            "status" : "OPEN",
-            "type" : "SUPPLIER"
-        }
-
-        return requests.post(url, data=json.dumps(payload), headers=self.__headers)
-
-    def updateConsignment(self, consignmentObj):
-        url = f"{self.__domain}{self.__ENDPOINTS['stockorders']}/{consignmentObj['id']}"
-
-        consignmentObj['status'] = "RECEIVED"
-
-        return requests.put(url, data=json.dumps(consignmentObj), headers=self.__headers)
 
     def deleteProduct(self, id):
         #return requests.request("DELETE", '{0}{1}/{2}'.format(self.__domain, self.__ENDPOINTS['delProd'], id), headers=self.__headers).json()
